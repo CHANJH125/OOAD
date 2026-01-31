@@ -27,11 +27,12 @@ public class SeminarManagementSystem extends JFrame {
     private DefaultTableModel coordinatorAllSubmissionsModel;
     private DefaultTableModel userManagementModel;
     private JComboBox<String> presenterSelectionBox;
+    private JComboBox<String> studentSessBox = new JComboBox<>();
 
     private final String DATA_FILE = "seminar_data.dat";
 
     public SeminarManagementSystem() {
-        setTitle("Seminar Management System");
+        setTitle("Seminar System");
         setSize(1100, 700);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
@@ -152,7 +153,7 @@ public class SeminarManagementSystem extends JFrame {
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
         // Header
-        JLabel title = new JLabel("SEMINAR PORTAL", SwingConstants.CENTER);
+        JLabel title = new JLabel("SEMINAR SYSTEM", SwingConstants.CENTER);
         title.setFont(new Font("Segoe UI", Font.BOLD, 28));
         title.setForeground(new Color(52, 152, 219));
         gbc.gridx = 0;
@@ -365,25 +366,11 @@ public class SeminarManagementSystem extends JFrame {
         regCard.add(typeBox);
 
         regCard.add(new JLabel("Target Session: *"));
-        JComboBox<String> sessBox = new JComboBox<>();
-        sessBox.addItem("Choose Session...");
+        studentSessBox.addItem("Choose Session...");
+        refreshStudentSessions();
 
-        // Filter for Future Sessions Only
-        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm");
-        java.util.Date now = new java.util.Date();
-        for (Object[] s : allSessions) {
-            try {
-                java.util.Date sDate = sdf.parse((String) s[1]);
-                if (sDate.after(now)) {
-                    sessBox.addItem(s[0] + " (" + s[3] + ") - " + s[1]);
-                }
-            } catch (Exception ex) {
-                sessBox.addItem(s[0] + " (" + s[3] + ")");
-            }
-        }
-
-        sessBox.addActionListener(e -> {
-            String selected = (String) sessBox.getSelectedItem();
+        studentSessBox.addActionListener(e -> {
+            String selected = (String) studentSessBox.getSelectedItem();
             if (selected != null && selected.contains("(")) {
                 String typePart = selected.substring(selected.indexOf("(") + 1, selected.indexOf(")"));
                 if (typePart.equalsIgnoreCase("Oral")) {
@@ -396,12 +383,13 @@ public class SeminarManagementSystem extends JFrame {
                 typeBox.setEnabled(true);
             }
         });
-        regCard.add(sessBox);
+        regCard.add(studentSessBox);
 
         regCard.add(new JLabel("Presentation File: *"));
         JPanel fPanel = new JPanel(new BorderLayout(5, 0));
         fPanel.setOpaque(false);
         JTextField fField = new JTextField();
+        fField.setEditable(false); // Only can browse, not type
         JButton bBtn = new JButton("Browse");
         bBtn.addActionListener(e -> {
             JFileChooser fileChooser = new JFileChooser();
@@ -424,7 +412,7 @@ public class SeminarManagementSystem extends JFrame {
         subBtn.addActionListener(e -> {
             String title = titleField.getText().trim();
             String type = (String) typeBox.getSelectedItem();
-            String session = (String) sessBox.getSelectedItem();
+            String session = (String) studentSessBox.getSelectedItem();
             String abst = abstractArea.getText().trim();
             String sup = supervisorField.getText().trim();
             String file = fField.getText().trim();
@@ -506,11 +494,34 @@ public class SeminarManagementSystem extends JFrame {
         evalWrapper.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         evalWrapper.setBackground(new Color(245, 247, 250));
 
-        JPanel topCard = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
+        JPanel topCard = new JPanel(new BorderLayout());
         topCard.setBackground(Color.WHITE);
-        topCard.setBorder(BorderFactory.createLineBorder(new Color(189, 195, 199)));
-        topCard.add(new JLabel("Select Assigned Presenter:"));
-        topCard.add(presenterSelectionBox);
+        topCard.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(189, 195, 199)),
+                BorderFactory.createEmptyBorder(10, 15, 10, 15)));
+
+        JPanel leftTop = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        leftTop.setOpaque(false);
+        leftTop.add(new JLabel("Select Assigned Presenter:"));
+        leftTop.add(presenterSelectionBox);
+
+        JButton infoBtn = new JButton("View Student Research Info");
+        infoBtn.setBackground(new Color(46, 204, 113));
+        infoBtn.setForeground(Color.WHITE);
+        infoBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        infoBtn.addActionListener(e -> {
+            String selected = (String) presenterSelectionBox.getSelectedItem();
+            if (selected != null) {
+                String[] parts = selected.split(" - ", 2);
+                showResearchDetail(parts[0], parts[1]);
+            } else {
+                JOptionPane.showMessageDialog(this, "Please select a presenter first!");
+            }
+        });
+
+        topCard.add(leftTop, BorderLayout.WEST);
+        topCard.add(infoBtn, BorderLayout.EAST);
+
         evalWrapper.add(topCard, BorderLayout.NORTH);
 
         JPanel rubricCard = new JPanel(new GridLayout(5, 2, 10, 10));
@@ -617,17 +628,28 @@ public class SeminarManagementSystem extends JFrame {
         JPanel sessionPanel = new JPanel(new BorderLayout(10, 10));
         sessionPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         JPanel sessionForm = new JPanel(new GridLayout(5, 2, 10, 10));
-        sessionForm.add(new JLabel("Date (YYYY-MM-DD HH:MM):"));
-        sessionForm.add(new JTextField());
+
+        sessionForm.add(new JLabel("Date & Time (Click to Change):"));
+        JSpinner dateSpinner = new JSpinner(new SpinnerDateModel());
+        JSpinner.DateEditor dateEditor = new JSpinner.DateEditor(dateSpinner, "yyyy-MM-dd HH:mm");
+        dateSpinner.setEditor(dateEditor);
+        dateSpinner.setValue(new Date());
+        sessionForm.add(dateSpinner);
+
         sessionForm.add(new JLabel("Venue:"));
-        sessionForm.add(new JTextField());
+        String[] venues = new String[10];
+        for (int i = 0; i < 10; i++)
+            venues[i] = "V" + (i + 1);
+        JComboBox<String> venuePicker = new JComboBox<>(venues);
+        sessionForm.add(venuePicker);
+
         sessionForm.add(new JLabel("Type:"));
         JComboBox<String> sessionTypeBox = new JComboBox<>(new String[] { "Oral", "Poster" });
         sessionForm.add(sessionTypeBox);
 
         sessionForm.add(new JLabel("Assign Evaluator:"));
         JComboBox<String> evalPicker = new JComboBox<>();
-        evalPicker.addItem("Unassigned");
+        evalPicker.addItem("Select Evaluator...");
         for (Entry<String, String[]> entry : userDatabase.entrySet()) {
             if (entry.getValue()[1].equals("Evaluator"))
                 evalPicker.addItem(entry.getKey());
@@ -638,21 +660,64 @@ public class SeminarManagementSystem extends JFrame {
         addSession.setBackground(new Color(52, 152, 219));
         sessionForm.add(new JLabel());
         sessionForm.add(addSession);
+
         addSession.addActionListener(e -> {
-            String dt = ((JTextField) sessionForm.getComponent(1)).getText();
-            String vn = ((JTextField) sessionForm.getComponent(3)).getText();
-            String ty = (String) ((JComboBox<?>) sessionForm.getComponent(5)).getSelectedItem();
-            String ev = (String) ((JComboBox<?>) sessionForm.getComponent(7)).getSelectedItem();
-            if (dt.isEmpty() || vn.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Please fill all session fields!", "Input Error",
+            Date selectedDate = (Date) dateSpinner.getValue();
+            String dt = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm").format(selectedDate);
+            String vn = (String) venuePicker.getSelectedItem();
+            String ty = (String) sessionTypeBox.getSelectedItem();
+            String ev = (String) evalPicker.getSelectedItem();
+
+            if (ev.equals("Select Evaluator...")) {
+                JOptionPane.showMessageDialog(this, "Error: Please assign an evaluator!", "Input Error",
                         JOptionPane.WARNING_MESSAGE);
                 return;
             }
+
+            // Conflict & Time Logic
+            java.util.Date now = new java.util.Date();
+            if (selectedDate.before(now)) {
+                JOptionPane.showMessageDialog(this, "Error: Cannot schedule a session in the past!", "Timing Error",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            long selectedMillis = selectedDate.getTime();
+            long twentyMins = 20 * 60 * 1000;
+
+            for (Object[] s : allSessions) {
+                try {
+                    Date existingDate = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm").parse((String) s[1]);
+                    long existingMillis = existingDate.getTime();
+                    String existingVenue = (String) s[2];
+                    String existingEval = (String) s[5];
+
+                    // Check for 20-minute overlap window
+                    if (Math.abs(selectedMillis - existingMillis) < twentyMins) {
+                        if (existingVenue.equals(vn)) {
+                            JOptionPane.showMessageDialog(this,
+                                    "Conflict: Venue " + vn + " is already booked within this 20-min window!",
+                                    "Scheduling Conflict", JOptionPane.ERROR_MESSAGE);
+                            return;
+                        }
+                        if (existingEval.equals(ev)) {
+                            JOptionPane.showMessageDialog(this,
+                                    "Conflict: Evaluator " + ev
+                                            + " is already assigned to a session in this 20-min window!",
+                                    "Scheduling Conflict", JOptionPane.ERROR_MESSAGE);
+                            return;
+                        }
+                    }
+                } catch (Exception ex) {
+                }
+            }
+
             Object[] newSess = new Object[] { "S00" + (sessionTableModel.getRowCount() + 1), dt, vn, ty, "Scheduled",
                     ev };
             sessionTableModel.addRow(newSess);
             allSessions.add(newSess);
             saveData();
+            refreshStudentSessions();
             JOptionPane.showMessageDialog(this, "New Session Created Successfully!");
         });
 
@@ -825,6 +890,42 @@ public class SeminarManagementSystem extends JFrame {
 
             // Populate Coordinator Model (Overview)
             coordinatorAllSubmissionsModel.addRow(new Object[] { sub[0], sub[1], sub[2], sub[3], sessId, score });
+        }
+        refreshStudentSessions();
+    }
+
+    private void refreshStudentSessions() {
+        if (studentSessBox == null)
+            return;
+        studentSessBox.removeAllItems();
+        studentSessBox.addItem("Choose Session...");
+
+        Set<String> takenSessions = new HashSet<>();
+        for (String[] sub : allSubmissions) {
+            takenSessions.add(sub[4]); // SessionID is index 4
+        }
+
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm");
+        java.util.Date now = new java.util.Date();
+
+        for (Object[] s : allSessions) {
+            String sessID = (String) s[0];
+            String sessDateStr = (String) s[1];
+
+            // Rule 1: Must not be taken
+            if (takenSessions.contains(sessID))
+                continue;
+
+            // Rule 2: Must be in the future
+            try {
+                java.util.Date sDate = sdf.parse(sessDateStr);
+                if (sDate.after(now)) {
+                    studentSessBox.addItem(sessID + " (" + s[3] + ") - " + sessDateStr);
+                }
+            } catch (Exception ex) {
+                // If date format is weird, we skip it for safety as requested "it should be
+                // past already"
+            }
         }
     }
 
