@@ -10,17 +10,12 @@ public class SeminarManagementSystem extends JFrame {
     private CardLayout cardLayout = new CardLayout();
     private JPanel mainPanel = new JPanel(cardLayout);
     private String loggedInUser = "";
-    private String currentRole = "Student"; // Default to Student
+    private String currentRole = "Student"; 
     private java.util.Map<String, String[]> userDatabase = new java.util.HashMap<>();
 
-    // Centralized Data Store (for persistence)
-    private java.util.List<String[]> allSubmissions = new ArrayList<>(); // [User, Title, Type, Status, SessionID, Date,
-                                                                         // Score, Comments, Abstract, Supervisor,
-                                                                         // FilePath]
-    private java.util.List<Object[]> allSessions = new ArrayList<>(); // [SessID, Date, Venue, Type, Status,
-                                                                      // AssignedEvaluator]
+    private java.util.List<String[]> allSubmissions = new ArrayList<>(); 
+    private java.util.List<Object[]> allSessions = new ArrayList<>(); 
 
-    // Shared UI Models
     private DefaultTableModel studentSubmissionsModel;
     private DefaultTableModel evaluatorTaskModel;
     private DefaultTableModel sessionTableModel;
@@ -37,7 +32,6 @@ public class SeminarManagementSystem extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        // Initialize Models
         studentSubmissionsModel = new DefaultTableModel(
                 new String[] { "Title", "Type", "Status", "Session", "Date", "Score", "Comment", "FullComment" }, 0) {
             public boolean isCellEditable(int row, int col) {
@@ -69,9 +63,8 @@ public class SeminarManagementSystem extends JFrame {
         };
         presenterSelectionBox = new JComboBox<>();
 
-        loadData(); // Load previous state
+        loadData(); 
 
-        // Create panels
         createLoginPanel();
         createRegisterPanel();
         createStudentPanel();
@@ -102,22 +95,20 @@ public class SeminarManagementSystem extends JFrame {
                 allSubmissions = (List<String[]>) ois.readObject();
                 allSessions = (List<Object[]>) ois.readObject();
 
-                // Sync session table
                 for (Object[] row : allSessions) {
-                    if (row.length == 5) { // Migrating old data
+                    if (row.length == 5) { 
                         Object[] newRow = new Object[] { row[0], row[1], row[2], row[3], row[4], "Unassigned" };
                         sessionTableModel.addRow(newRow);
                     } else {
                         sessionTableModel.addRow(row);
                     }
                 }
-                // Sync user management
                 for (Entry<String, String[]> entry : userDatabase.entrySet()) {
                     userManagementModel.addRow(new Object[] { entry.getKey(), entry.getValue()[1] });
                 }
             } catch (Exception e) {
                 System.out.println("Error loading data: " + e.getMessage());
-                initializeDefaults(); // Fallback to defaults if file is incompatible
+                initializeDefaults(); 
             }
         } else {
             initializeDefaults();
@@ -139,9 +130,8 @@ public class SeminarManagementSystem extends JFrame {
 
     private void createLoginPanel() {
         JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBackground(new Color(52, 152, 219)); // Vibrant Blue background
+        panel.setBackground(new Color(52, 152, 219)); 
 
-        // Main Card
         JPanel card = new JPanel(new GridBagLayout());
         card.setBackground(Color.WHITE);
         card.setBorder(BorderFactory.createCompoundBorder(
@@ -152,7 +142,6 @@ public class SeminarManagementSystem extends JFrame {
         gbc.insets = new Insets(10, 10, 10, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        // Header
         JLabel title = new JLabel("SEMINAR SYSTEM", SwingConstants.CENTER);
         title.setFont(new Font("Segoe UI", Font.BOLD, 28));
         title.setForeground(new Color(52, 152, 219));
@@ -167,7 +156,6 @@ public class SeminarManagementSystem extends JFrame {
         gbc.gridy = 1;
         card.add(subtitle, gbc);
 
-        // Username
         gbc.gridwidth = 2;
         gbc.gridy = 2;
         gbc.gridx = 0;
@@ -180,7 +168,6 @@ public class SeminarManagementSystem extends JFrame {
         userField.setPreferredSize(new Dimension(300, 35));
         card.add(userField, gbc);
 
-        // Password
         gbc.gridy = 4;
         JLabel passLabel = new JLabel("Password");
         passLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
@@ -191,13 +178,12 @@ public class SeminarManagementSystem extends JFrame {
         passField.setPreferredSize(new Dimension(300, 35));
         card.add(passField, gbc);
 
-        // Login Button
         gbc.gridy = 6;
         gbc.gridwidth = 2;
         gbc.insets = new Insets(25, 10, 10, 10);
         JButton loginBtn = new JButton("LOGIN TO SYSTEM");
         loginBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        loginBtn.setBackground(new Color(52, 152, 219)); // Vibrant Blue
+        loginBtn.setBackground(new Color(52, 152, 219)); 
         loginBtn.setForeground(Color.WHITE);
         loginBtn.setFocusPainted(false);
         loginBtn.setPreferredSize(new Dimension(0, 45));
@@ -209,7 +195,7 @@ public class SeminarManagementSystem extends JFrame {
                 if (credentials[0].equals(password)) {
                     loggedInUser = username;
                     currentRole = credentials[1];
-                    refreshRoleData(); // Populate UI with user-specific data
+                    refreshRoleData(); 
                     if (currentRole.equals("Student"))
                         cardLayout.show(mainPanel, "STUDENT");
                     else if (currentRole.equals("Evaluator"))
@@ -226,7 +212,6 @@ public class SeminarManagementSystem extends JFrame {
         });
         card.add(loginBtn, gbc);
 
-        // Register Link
         gbc.gridy = 7;
         gbc.insets = new Insets(5, 10, 10, 10);
         JButton toRegisterBtn = new JButton("Don't have an account? Create one now");
@@ -244,7 +229,7 @@ public class SeminarManagementSystem extends JFrame {
 
     private void createRegisterPanel() {
         JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBackground(new Color(22, 160, 133)); // Teal background
+        panel.setBackground(new Color(22, 160, 133)); 
 
         JPanel card = new JPanel(new GridBagLayout());
         card.setBackground(Color.WHITE);
@@ -325,7 +310,6 @@ public class SeminarManagementSystem extends JFrame {
         mainPanel.add(panel, "REGISTER");
     }
 
-    // Dashboard methods removed to go direct to role panels
 
     private void createStudentPanel() {
         JPanel panel = new JPanel(new BorderLayout());
@@ -337,7 +321,6 @@ public class SeminarManagementSystem extends JFrame {
         JTabbedPane tabs = new JTabbedPane();
         tabs.setFont(new Font("Segoe UI", Font.BOLD, 12));
 
-        // Registration Card
         JPanel regFormWrapper = new JPanel(new GridBagLayout());
         regFormWrapper.setBackground(new Color(245, 247, 250));
 
@@ -378,7 +361,7 @@ public class SeminarManagementSystem extends JFrame {
                 } else if (typePart.equalsIgnoreCase("Poster")) {
                     typeBox.setSelectedItem("Poster Presentation");
                 }
-                typeBox.setEnabled(false); // Lock it to session type
+                typeBox.setEnabled(false); 
             } else {
                 typeBox.setEnabled(true);
             }
@@ -389,7 +372,7 @@ public class SeminarManagementSystem extends JFrame {
         JPanel fPanel = new JPanel(new BorderLayout(5, 0));
         fPanel.setOpaque(false);
         JTextField fField = new JTextField();
-        fField.setEditable(false); // Only can browse, not type
+        fField.setEditable(false); 
         JButton bBtn = new JButton("Browse");
         bBtn.addActionListener(e -> {
             JFileChooser fileChooser = new JFileChooser();
@@ -425,8 +408,6 @@ public class SeminarManagementSystem extends JFrame {
                 return;
             }
 
-            // [User, Title, Type, Status, SessionID, Date, Score, Comments, Abstract,
-            // Supervisor, FilePath]
             String[] sub = new String[] { loggedInUser, title, type, "Pending", session.split(" ")[0], date, "-", "-",
                     abst, sup, file };
             allSubmissions.add(sub);
@@ -438,7 +419,6 @@ public class SeminarManagementSystem extends JFrame {
         regFormWrapper.add(regCard);
         tabs.addTab("New Registration", regFormWrapper);
 
-        // Submissions Table Card
         JPanel tableWrapper = new JPanel(new BorderLayout());
         tableWrapper.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         tableWrapper.setBackground(new Color(245, 247, 250));
@@ -450,10 +430,7 @@ public class SeminarManagementSystem extends JFrame {
         table.getTableHeader().setBackground(new Color(52, 73, 94));
         table.getTableHeader().setForeground(Color.WHITE);
 
-        // Action Listener for registration is already set above with typeBox and
-        // sessBox
 
-        // Hide the FullComment column from view
         table.removeColumn(table.getColumnModel().getColumn(7));
 
         table.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -489,7 +466,6 @@ public class SeminarManagementSystem extends JFrame {
         JTabbedPane tabs = new JTabbedPane();
         tabs.setFont(new Font("Segoe UI", Font.BOLD, 12));
 
-        // Evaluation Form Card
         JPanel evalWrapper = new JPanel(new BorderLayout(20, 20));
         evalWrapper.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         evalWrapper.setBackground(new Color(245, 247, 250));
@@ -560,17 +536,14 @@ public class SeminarManagementSystem extends JFrame {
                 return;
             }
 
-            // Update models
             String[] parts = selected.split(" - ", 2);
             String presenter = parts[0];
             String researchTitle = parts[1];
 
-            // Calculate score from spinners
             int total = 0;
             for (int i = 1; i < rubricCard.getComponentCount(); i += 2) {
                 total += (Integer) ((JSpinner) rubricCard.getComponent(i)).getValue();
             }
-            // Fix index to find comment box accurately
             String comments = ((JTextArea) ((JScrollPane) commentArea.getComponent(1))
                     .getViewport().getView()).getText();
 
@@ -590,7 +563,6 @@ public class SeminarManagementSystem extends JFrame {
 
         tabs.addTab("Evaluation Form", evalWrapper);
 
-        // Assigned Presentations Table
         JPanel listWrapper = new JPanel(new BorderLayout());
         listWrapper.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         JTable eTable = new JTable(evaluatorTaskModel);
@@ -624,7 +596,6 @@ public class SeminarManagementSystem extends JFrame {
 
         JTabbedPane tabs = new JTabbedPane();
 
-        // 1. Session Management
         JPanel sessionPanel = new JPanel(new BorderLayout(10, 10));
         sessionPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         JPanel sessionForm = new JPanel(new GridLayout(5, 2, 10, 10));
@@ -674,7 +645,6 @@ public class SeminarManagementSystem extends JFrame {
                 return;
             }
 
-            // Conflict & Time Logic
             java.util.Date now = new java.util.Date();
             if (selectedDate.before(now)) {
                 JOptionPane.showMessageDialog(this, "Error: Cannot schedule a session in the past!", "Timing Error",
@@ -692,7 +662,6 @@ public class SeminarManagementSystem extends JFrame {
                     String existingVenue = (String) s[2];
                     String existingEval = (String) s[5];
 
-                    // Check for 20-minute overlap window
                     if (Math.abs(selectedMillis - existingMillis) < twentyMins) {
                         if (existingVenue.equals(vn)) {
                             JOptionPane.showMessageDialog(this,
@@ -730,14 +699,12 @@ public class SeminarManagementSystem extends JFrame {
         sTable.getTableHeader().setForeground(Color.WHITE);
         sessionPanel.add(new JScrollPane(sTable), BorderLayout.CENTER);
 
-        // 2. Research Management (Integrated Tracking)
         JPanel resPanel = new JPanel(new BorderLayout(10, 10));
         resPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         JTable resTable = new JTable(coordinatorAllSubmissionsModel);
         resTable.setRowHeight(30);
         resPanel.add(new JScrollPane(resTable), BorderLayout.CENTER);
 
-        // 3. Award Management (Restored rich UI)
         JPanel awardPanel = new JPanel(new GridLayout(2, 2, 15, 15));
         awardPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         String[] awardNames = { "Best Oral Presentation", "Best Poster Presentation", "People's Choice Award",
@@ -767,9 +734,9 @@ public class SeminarManagementSystem extends JFrame {
                 java.util.List<String> validCandidates = new ArrayList<>();
                 for (String[] s : allSubmissions) {
                     if (index == 0 && !s[2].contains("Oral"))
-                        continue; // Best Oral filter
+                        continue; 
                     if (index == 1 && !s[2].contains("Poster"))
-                        continue; // Best Poster filter
+                        continue; 
                     validCandidates.add(s[0] + " (" + s[1] + ")");
                 }
 
@@ -797,7 +764,6 @@ public class SeminarManagementSystem extends JFrame {
             awardPanel.add(card);
         }
 
-        // 4. Reports & Summary (Restored rich UI)
         JPanel reportPanel = new JPanel(new BorderLayout(10, 10));
         reportPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
@@ -852,20 +818,16 @@ public class SeminarManagementSystem extends JFrame {
     }
 
     private void refreshRoleData() {
-        // Clear all session-based models
         studentSubmissionsModel.setRowCount(0);
         evaluatorTaskModel.setRowCount(0);
         coordinatorAllSubmissionsModel.setRowCount(0);
         presenterSelectionBox.removeAllItems();
 
         for (String[] sub : allSubmissions) {
-            // [User, Title, Type, Status, SessionID, Date, Score, Comments, Abstract,
-            // Supervisor, FilePath]
             String score = sub.length > 6 ? sub[6] : "-";
             String comments = sub.length > 7 ? sub[7] : "-";
             String sessId = sub.length > 4 ? sub[4] : "TBD";
 
-            // Check session assignment for evaluator visibility
             boolean isAssignedToMe = false;
             for (Object[] s : allSessions) {
                 if (s[0].equals(sessId) && s.length > 5 && s[5].equals(loggedInUser)) {
@@ -874,21 +836,18 @@ public class SeminarManagementSystem extends JFrame {
                 }
             }
 
-            // Populate Student Model (Personalized)
             if (sub[0].equals(loggedInUser)) {
                 String fbStatus = (comments.equals("-") || comments.isEmpty()) ? "No" : "Yes (Double Click to View)";
                 studentSubmissionsModel
                         .addRow(new Object[] { sub[1], sub[2], sub[3], sessId, sub[5], score, fbStatus, comments });
             }
 
-            // Populate Evaluator Model (ONLY if assigned to this evaluator)
             if (currentRole.equals("Evaluator") && isAssignedToMe) {
                 evaluatorTaskModel.addRow(new Object[] { sub[0], sub[1], sub[2], sub[3] });
                 if (sub[3].equals("Pending"))
                     presenterSelectionBox.addItem(sub[0] + " - " + sub[1]);
             }
 
-            // Populate Coordinator Model (Overview)
             coordinatorAllSubmissionsModel.addRow(new Object[] { sub[0], sub[1], sub[2], sub[3], sessId, score });
         }
         refreshStudentSessions();
@@ -902,7 +861,7 @@ public class SeminarManagementSystem extends JFrame {
 
         Set<String> takenSessions = new HashSet<>();
         for (String[] sub : allSubmissions) {
-            takenSessions.add(sub[4]); // SessionID is index 4
+            takenSessions.add(sub[4]); 
         }
 
         java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm");
@@ -912,19 +871,15 @@ public class SeminarManagementSystem extends JFrame {
             String sessID = (String) s[0];
             String sessDateStr = (String) s[1];
 
-            // Rule 1: Must not be taken
             if (takenSessions.contains(sessID))
                 continue;
 
-            // Rule 2: Must be in the future
             try {
                 java.util.Date sDate = sdf.parse(sessDateStr);
                 if (sDate.after(now)) {
                     studentSessBox.addItem(sessID + " (" + s[3] + ") - " + sessDateStr);
                 }
             } catch (Exception ex) {
-                // If date format is weird, we skip it for safety as requested "it should be
-                // past already"
             }
         }
     }
@@ -952,13 +907,12 @@ public class SeminarManagementSystem extends JFrame {
         }
     }
 
-    // Integrated into Coordinator Panel
 
     private JPanel createModuleHeader(String title) {
         JPanel header = new JPanel(new BorderLayout());
-        header.setBackground(new Color(44, 62, 80)); // Deep Navy
+        header.setBackground(new Color(44, 62, 80)); 
         header.setPreferredSize(new Dimension(0, 65));
-        header.setBorder(BorderFactory.createMatteBorder(0, 0, 5, 0, new Color(52, 152, 219))); // Blue bottom accent
+        header.setBorder(BorderFactory.createMatteBorder(0, 0, 5, 0, new Color(52, 152, 219))); 
 
         JLabel titleLabel = new JLabel("  " + title, SwingConstants.LEFT);
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
@@ -973,7 +927,7 @@ public class SeminarManagementSystem extends JFrame {
 
         JButton logout = new JButton("LOGOUT");
         logout.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        logout.setBackground(new Color(231, 76, 60)); // Alizarin Red
+        logout.setBackground(new Color(231, 76, 60)); 
         logout.setForeground(Color.WHITE);
         logout.setFocusPainted(false);
         logout.setBorder(BorderFactory.createEmptyBorder(8, 20, 8, 20));
@@ -992,3 +946,4 @@ public class SeminarManagementSystem extends JFrame {
         SwingUtilities.invokeLater(() -> new SeminarManagementSystem());
     }
 }
+
